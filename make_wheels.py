@@ -78,15 +78,15 @@ PACKAGE_WHEELNAME = "-".join([normalize(PACKAGE_NAME), PACKAGE_VERSION])
 
 PYTHON_TAGS = ["py2", "py3"]
 ABI_TAGS = ["none"]
-PY_PLATFORM_TF_ARCH = {
-    "manylinux_2_5_x86_64.musllinux_1_1_x86_64": "linux_amd64",
-    "manylinux_2_5_i686.musllinux_1_1_i686": "linux_386",
-    "manylinux_2_5_aarch64.musllinux_1_1_aarch64": "linux_arm64",
-    "linux_armv6l.linux_armv7l": "linux_arm",
-    "macosx_11_0_x86_64": "darwin_amd64",
-    "macosx_11_0_arm64": "linux_arm64",
-    "win_amd64": "windows_amd64",
-    "win32": "windows_386",
+TF_ARCH_PY_PLATFORM = {
+    "linux_amd64": ["manylinux_2_5_x86_64", "musllinux_1_1_x86_64"],
+    "linux_386": ["manylinux_2_5_i686", "musllinux_1_1_i686"],
+    "linux_arm64": ["manylinux_2_5_aarch64", "musllinux_1_1_aarch64"],
+    "linux_arm": ["linux_armv6l", "linux_armv7l"],
+    "darwin_amd64": ["macosx_11_0_x86_64"],
+    "linux_arm64": ["macosx_11_0_arm64"],
+    "windows_amd64": ["win_amd64"],
+    "windows_386": ["win32"],
 }
 
 LICENSE = Path("LICENSE").absolute()
@@ -143,11 +143,11 @@ gpg(
 )
 
 platform_zip = {}
-for platform, terraform_arch in PY_PLATFORM_TF_ARCH.items():
+for terraform_arch, platforms in TF_ARCH_PY_PLATFORM.items():
     terraform_zip_url = TERRAFORM_URL.format(TERRAFORM_VERSION, terraform_arch)
     terraform_zip = BUILD_DIR.joinpath(Path(terraform_zip_url).name)
     wget(terraform_zip_url, "-O", terraform_zip, _out=sys.stdout, _err=sys.stderr)
-    platform_zip[platform] = terraform_zip
+    platform_zip[terraform_arch] = terraform_zip
 
 shasum(
     "--algorithm",
@@ -160,9 +160,15 @@ shasum(
     _err=sys.stderr,
 )
 
-for platform, terraform_zip in platform_zip.items():
+for terraform_arch, terraform_zip in platform_zip.items():
+    platforms = TF_ARCH_PY_PLATFORM[terraform_arch]
     wheel_name = "-".join(
-        [PACKAGE_WHEELNAME, ".".join(PYTHON_TAGS), ".".join(ABI_TAGS), platform]
+        [
+            PACKAGE_WHEELNAME,
+            ".".join(PYTHON_TAGS),
+            ".".join(ABI_TAGS),
+            ".".join(platforms),
+        ]
     )
 
     wheel_tree = BUILD_DIR.joinpath(wheel_name)
@@ -202,7 +208,8 @@ for platform, terraform_zip in platform_zip.items():
     tags = []
     for python_tag in PYTHON_TAGS:
         for abi_tag in ABI_TAGS:
-            tags.append("-".join([python_tag, abi_tag, platform]))
+            for platform in platforms:
+                tags.append("-".join([python_tag, abi_tag, platform]))
 
     wheel_metadata_msg = make_message(
         {
