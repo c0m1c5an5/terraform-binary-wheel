@@ -33,6 +33,9 @@ jobs:
     permissions:
       id-token: write
     environment: release
+    concurrency:
+      group: publish
+      cancel-in-progress: false
     steps:
       - name: Retrieve release distributions
         uses: actions/download-artifact@v4
