@@ -68,7 +68,7 @@ TERRAFORM_SIGS_URL = (
 )
 
 # Use git tag as the package version and the major.minor.patch portion as the terraform version.
-GIT_TAG = os.getenv("GIT_TAG", "1.5.7-rc0")
+GIT_TAG = os.getenv("GIT_TAG", "1.5.7-a0")
 GIT_SEMVER = semver.Version.parse(GIT_TAG)
 PACKAGE_VERSION = ".".join([normalize(n) for n in GIT_SEMVER.to_tuple() if n])
 TERRAFORM_VERSION = str(GIT_SEMVER.finalize_version())
